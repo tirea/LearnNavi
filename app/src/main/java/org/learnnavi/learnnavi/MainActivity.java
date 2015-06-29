@@ -11,7 +11,7 @@ import android.widget.ListView;
 import android.widget.ArrayAdapter;
 import android.widget.AdapterView.OnItemClickListener;
 import android.widget.AdapterView;
-import android. widget.ListAdapter;
+import android.widget.ListAdapter;
 import android.widget.Toast;
 
 public class MainActivity extends ActionBarActivity
@@ -22,7 +22,13 @@ public class MainActivity extends ActionBarActivity
 	{
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.main);
-		String[] words = {"Word 1",  "Word 2", "Word 3", "Word 4", "Word 5", "Word 6", "Word 7", "Word 8"};
+		String[] words = {
+			"Word 1",  "Word 2", "Word 3", "Word 4", 
+			"Word 5", "Word 6", "Word 7", "Word 8",
+			"Word 9", "Word 10", "Word 11", "Word 12",
+			"Word 13", "Word 14", "Word 15", "Word 16",
+			"Word 17", "Word 18", "Word 19", "Word 20",
+		};
 		ListAdapter mListAdapter = new ArrayAdapter<String>(this, android.R.layout.simple_list_item_1, words);
 		ListView dictListView = (ListView) findViewById(R.id.dictList);
 		dictListView.setAdapter(mListAdapter);
