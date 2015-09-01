@@ -1,2 +1,10 @@
 /build
 /app/build
+.gradle/
+.idea/
+gradle/
+gradlew
+gradlew.bat
+local.properties
+LearnNavi.iml
+app/app.iml
