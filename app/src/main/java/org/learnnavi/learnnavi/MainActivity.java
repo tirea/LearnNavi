@@ -18,13 +18,14 @@ import android.widget.Toast;
 
 public class MainActivity extends ActionBarActivity {
 
-    DBAdapter myDB = new DBAdapter(this);
+    //DBAdapter myDB = new DBAdapter(this);
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState)
 	{
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.main);
+		
 		String[] words = {
 			"Word 1",  "Word 2", "Word 3", "Word 4",
 			"Word 5", "Word 6", "Word 7", "Word 8",
@@ -32,7 +33,9 @@ public class MainActivity extends ActionBarActivity {
 			"Word 13", "Word 14", "Word 15", "Word 16",
 			"Word 17", "Word 18", "Word 19", "Word 20",
 		};
+		
 		ListAdapter mListAdapter = new ArrayAdapter<String>(this, android.R.layout.simple_list_item_1, words);
+		
 		ListView dictListView = (ListView) findViewById(R.id.dictList);
 		dictListView.setAdapter(mListAdapter);
 		dictListView.setOnItemClickListener(new AdapterView.OnItemClickListener(){
@@ -44,9 +47,7 @@ public class MainActivity extends ActionBarActivity {
                     String.valueOf(p1.getItemAtPosition(p3));
                 Toast.makeText(MainActivity.this, wordSelected, Toast.LENGTH_SHORT).show();
             }
-
-
-        });
+		});
 	}
 
 	@Override
