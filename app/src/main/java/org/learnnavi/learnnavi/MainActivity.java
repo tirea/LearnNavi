@@ -1,13 +1,18 @@
 package org.learnnavi.learnnavi;
 
+import android.content.res.Configuration;
 import android.database.Cursor;
+import android.graphics.Color;
 import android.os.Bundle;
 import android.support.v4.view.MenuItemCompat;
+import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBarActivity;
+import android.support.v7.app.ActionBarDrawerToggle;
 import android.support.v7.widget.SearchView;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.view.Gravity;
 import android.widget.ListView;
 import android.widget.ArrayAdapter;
 import android.widget.AdapterView.OnItemClickListener;
@@ -17,7 +22,14 @@ import android.widget.SimpleCursorAdapter;
 import android.widget.Toast;
 
 public class MainActivity extends ActionBarActivity {
-
+    
+    private ListView mDrawerList;
+    private DrawerLayout mDrawerLayout;
+    private ArrayAdapter<String> mAdapter;
+    private ActionBarDrawerToggle mDrawerToggle;
+    private String mActivityTitle;
+    private String[] mPartsOfSpeech;
+    
     //DBAdapter myDB = new DBAdapter(this);
 
 	@Override
@@ -26,6 +38,16 @@ public class MainActivity extends ActionBarActivity {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.main);
 		
+		mDrawerList = (ListView) findViewById(R.id.navList);
+		mDrawerLayout = (DrawerLayout) findViewById(R.id.drawer_layout);
+		mActivityTitle = getTitle().toString();
+		
+		addDrawerItems();
+		setupDrawer();
+		
+		getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+		getSupportActionBar().setHomeButtonEnabled(true);        
+        
 		String[] words = {
 			"Word 1",  "Word 2", "Word 3", "Word 4",
 			"Word 5", "Word 6", "Word 7", "Word 8",
@@ -48,26 +70,40 @@ public class MainActivity extends ActionBarActivity {
                 Toast.makeText(MainActivity.this, wordSelected, Toast.LENGTH_SHORT).show();
             }
 		});
+		
+		FloatingActionButton fabButton = new FloatingActionButton.Builder(this)
+        .withDrawable(getResources().getDrawable(R.drawable.ic_search_white_24dp))
+        .withButtonColor(getResources().getColor(R.color.accent))
+        .withGravity(Gravity.BOTTOM | Gravity.RIGHT)
+        .withMargins(0, 0, 16, 16)
+        .create();
+		
 	}
 
 	@Override
 	public boolean onCreateOptionsMenu(Menu menu)
 	{
 		getMenuInflater().inflate(R.menu.main_activity_actions, menu);
-		MenuItem searchItem = menu.findItem(R.id.action_search);
-		SearchView searchView = (SearchView) MenuItemCompat.getActionView(searchItem);
+		//MenuItem searchItem = menu.findItem(R.id.action_search);
+		//SearchView searchView = (SearchView) MenuItemCompat.getActionView(searchItem);
 		return super.onCreateOptionsMenu(menu);
 	}
 
 	@Override
 	public boolean onOptionsItemSelected(MenuItem item)
 	{
+		
+		// Activate the navigation drawer toggle
+        if (mDrawerToggle.onOptionsItemSelected(item)) {
+            return true;
+        }
+		
 		// Handle item selection
 		switch (item.getItemId())
 		{
-			case R.id.action_search:
+			//case R.id.action_search:
 				// TODO: search.
-				return true;
+				//return true;
 			case R.id.action_settings:
 				// TODO: open settings.
 				return true;
@@ -87,4 +123,54 @@ public class MainActivity extends ActionBarActivity {
         mylist.setAdapter(myCursorAdapter);
         */
     }
+    
+    private void addDrawerItems() {
+        mPartsOfSpeech = getResources().getStringArray(R.array.partsOfSpeech);
+        //String[] osArray = { "Android", "iOS", "Windows", "OS X", "Linux" };
+        mAdapter = new ArrayAdapter<String>(this, android.R.layout.simple_list_item_1, mPartsOfSpeech);
+        mDrawerList.setAdapter(mAdapter);
+
+        mDrawerList.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+                Toast.makeText(MainActivity.this, "Time for an upgrade!", Toast.LENGTH_SHORT).show();
+            }
+        });
+    }
+
+    private void setupDrawer() {
+        mDrawerToggle = new ActionBarDrawerToggle(this, mDrawerLayout, R.string.drawer_open, R.string.drawer_close) {
+
+            /** Called when a drawer has settled in a completely open state. */
+            public void onDrawerOpened(View drawerView) {
+                super.onDrawerOpened(drawerView);
+                getSupportActionBar().setTitle("Navigation!");
+                invalidateOptionsMenu(); // creates call to onPrepareOptionsMenu()
+            }
+
+            /** Called when a drawer has settled in a completely closed state. */
+            public void onDrawerClosed(View view) {
+                super.onDrawerClosed(view);
+                getSupportActionBar().setTitle(mActivityTitle);
+                invalidateOptionsMenu(); // creates call to onPrepareOptionsMenu()
+            }
+        };
+
+        mDrawerToggle.setDrawerIndicatorEnabled(true);
+        mDrawerLayout.setDrawerListener(mDrawerToggle);
+    }
+
+    @Override
+    protected void onPostCreate(Bundle savedInstanceState) {
+        super.onPostCreate(savedInstanceState);
+        // Sync the toggle state after onRestoreInstanceState has occurred.
+        mDrawerToggle.syncState();
+    }
+
+    @Override
+    public void onConfigurationChanged(Configuration newConfig) {
+        super.onConfigurationChanged(newConfig);
+        mDrawerToggle.onConfigurationChanged(newConfig);
+    }
+    
 }
