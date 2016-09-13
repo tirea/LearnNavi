@@ -2,12 +2,11 @@
 <menu xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto">
     
-    <!-- Search, should appear as action button 
     <item android:id="@+id/action_search"
         android:icon="@drawable/ic_search_white_24dp"
         android:title="@string/action_search"
         app:showAsAction="ifRoom|collapseActionView"
-        app:actionViewClass="android.support.v7.widget.search view" /> -->
+        app:actionViewClass="android.support.v7.widget.search view" />
     
     <item android:id="@+id/action_reverse"
         android:icon="@drawable/ic_sync_white_24dp"

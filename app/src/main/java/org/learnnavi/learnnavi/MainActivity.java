@@ -49,11 +49,11 @@ public class MainActivity extends ActionBarActivity {
 		getSupportActionBar().setHomeButtonEnabled(true);        
         
 		String[] words = {
-			"Word 1",  "Word 2", "Word 3", "Word 4",
-			"Word 5", "Word 6", "Word 7", "Word 8",
-			"Word 9", "Word 10", "Word 11", "Word 12",
-			"Word 13", "Word 14", "Word 15", "Word 16",
-			"Word 17", "Word 18", "Word 19", "Word 20",
+			"'a'aw",  "'akra", "'aku", "'al",
+			"'ali'ä", "'ampi", "'ampirikx", "'ana",
+			"'ango", "'angtsìk", "'anla", "'are",
+			"'aw", "'awkx", "'awlie", "'awlo",
+			"'awm", "'awnìm", "'awpo", "'awsiteng"
 		};
 		
 		ListAdapter mListAdapter = new ArrayAdapter<String>(this, android.R.layout.simple_list_item_1, words);
@@ -61,7 +61,6 @@ public class MainActivity extends ActionBarActivity {
 		ListView dictListView = (ListView) findViewById(R.id.dictList);
 		dictListView.setAdapter(mListAdapter);
 		dictListView.setOnItemClickListener(new AdapterView.OnItemClickListener(){
-
             @Override
             public void onItemClick(AdapterView<?> p1, View p2, int p3, long p4)
             {
@@ -71,12 +70,12 @@ public class MainActivity extends ActionBarActivity {
             }
 		});
 		
-		FloatingActionButton fabButton = new FloatingActionButton.Builder(this)
+		/*FloatingActionButton fabButton = new FloatingActionButton.Builder(this)
         .withDrawable(getResources().getDrawable(R.drawable.ic_search_white_24dp))
         .withButtonColor(getResources().getColor(R.color.accent))
         .withGravity(Gravity.BOTTOM | Gravity.RIGHT)
         .withMargins(0, 0, 16, 16)
-        .create();
+        .create();*/
 		
 	}
 
@@ -101,9 +100,9 @@ public class MainActivity extends ActionBarActivity {
 		// Handle item selection
 		switch (item.getItemId())
 		{
-			//case R.id.action_search:
+			case R.id.action_search:
 				// TODO: search.
-				//return true;
+				return true;
 			case R.id.action_settings:
 				// TODO: open settings.
 				return true;
@@ -112,8 +111,7 @@ public class MainActivity extends ActionBarActivity {
 		}
     }
 
-    private void populateListView() {
-        /*
+    /*private void populateListView() {
         Cursor cursor = myDB.getAllRows();
         String[] fromFieldNames = new String[] {DBAdapter.KEY_ROWID,DBAdapter.KEY_TASK};
         int[] toViewIDSNewIDs = new int[] {R.id.textViewItemNumber,R.id.textViewItemTask};
@@ -121,19 +119,17 @@ public class MainActivity extends ActionBarActivity {
         myCursorAdapter = new SimpleCursorAdapter(getBaseContext(),R.layout.item_layout,cursor,fromFieldNames,toViewIDS,0);
         ListView mylist = (ListView) findViewById(R.id.listViewTasks);
         mylist.setAdapter(myCursorAdapter);
-        */
-    }
+    }*/
     
     private void addDrawerItems() {
         mPartsOfSpeech = getResources().getStringArray(R.array.partsOfSpeech);
-        //String[] osArray = { "Android", "iOS", "Windows", "OS X", "Linux" };
         mAdapter = new ArrayAdapter<String>(this, android.R.layout.simple_list_item_1, mPartsOfSpeech);
         mDrawerList.setAdapter(mAdapter);
 
         mDrawerList.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-                Toast.makeText(MainActivity.this, "Time for an upgrade!", Toast.LENGTH_SHORT).show();
+                Toast.makeText(MainActivity.this, "Filter test", Toast.LENGTH_SHORT).show();
             }
         });
     }
@@ -144,7 +140,7 @@ public class MainActivity extends ActionBarActivity {
             /** Called when a drawer has settled in a completely open state. */
             public void onDrawerOpened(View drawerView) {
                 super.onDrawerOpened(drawerView);
-                getSupportActionBar().setTitle("Navigation!");
+                getSupportActionBar().setTitle(R.string.drawer_open);
                 invalidateOptionsMenu(); // creates call to onPrepareOptionsMenu()
             }
 
