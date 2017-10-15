@@ -13,9 +13,8 @@ import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteException;
 import android.database.sqlite.SQLiteOpenHelper;
 
-public class DBAdapter extends SQLiteOpenHelper {
-
-    private static final String DB_PATH = "/data/data/org.learnnavi.learnnavi/databases/";
+public class EntryDBAdapter extends SQLiteOpenHelper {
+	private static final String DB_PATH = "/data/data/org.learnnavi.app/databases/";
 	private static final String DB_NAME = "database.sqlite";
 	private SQLiteDatabase myDataBase;
 	private final Context myContext;
@@ -33,10 +32,10 @@ public class DBAdapter extends SQLiteOpenHelper {
     public static final String KEY_LETTER = "letter";
     public static final String KEY_PART = "part_of_speech";
 
-    // Undo ì->j and ä->b substitution for the Na'vi word
+    // Undo Ã¬->j and Ã¤->b substitution for the Na'vi word
     private static final String QUERY_PART_NAVI_WORD = "metaWords.navi";
-    // Undo ì->j and ä->b substitution for the Na'vi letter
-    private static final String QUERY_PART_NAVI_LETTER = "replace(replace(metaWords.alpha, 'B', 'Ä'), 'J', 'Ì')";
+    // Undo Ã¬->j and Ã¤->b substitution for the Na'vi letter
+    private static final String QUERY_PART_NAVI_LETTER = "replace(replace(metaWords.alpha, 'B', 'Ã„'), 'J', 'ÃŒ')";
     
     // Basic query by Na'vi word
     private static final String QUERY_PART_NAVI_START = "SELECT metaWords.id AS _id, " + QUERY_PART_NAVI_WORD + " AS word, " + QUERY_PART_NAVI_LETTER + " AS letter, localizedWords.localized AS definition FROM localizedWords JOIN metaWords ON (localizedWords.id = metaWords.id) WHERE localizedWords.languageCode = ? ";
@@ -88,64 +87,159 @@ public class DBAdapter extends SQLiteOpenHelper {
 	public static final String FILTER_INTJ = "(metaWords.partOfSpeech LIKE '%^intj.^%')";
 	public static final String FILTER_INTER = "(metaWords.partOfSpeech LIKE '%^inter.^%')";
 	
-	/**
-     * Constructor
-     * Takes and keeps a reference of the passed context in order to access to the application assets and resources.
-     * @param context
-     */
-    public DBAdapter(Context context) {
+    // Construct a query from the parts for the desired result
+    private static String createQuery(boolean queryNavi, boolean queryLetter, boolean queryFilter, String queryPOS)
+    {
+    	StringBuffer ret = new StringBuffer();
+    	
+    	if (queryNavi)
+    	{
+    		if (queryLetter)
+    			ret.append(QUERY_PART_NAVI_LETTER_START);
+    		else
+    			ret.append(QUERY_PART_NAVI_START);
+    		if (queryFilter)
+    			ret.append("AND " + QUERY_PART_NAVI_FILTER_WHERE);
+    		if (queryPOS != null)
+    		{
+    			ret.append("AND " + queryPOS);
+    		}
+    		if (queryLetter)
+    			ret.append(QUERY_PART_NAVI_LETTER_END);
+    		else
+    			ret.append(QUERY_PART_NAVI_END);
+    	}
+    	else
+    	{
+    		if (queryLetter)
+    			ret.append(QUERY_PART_TO_NAVI_LETTER_START);
+    		else
+    			ret.append(QUERY_PART_TO_NAVI_START);
+    		if (queryFilter)
+    			ret.append("AND " + QUERY_PART_TO_NAVI_FILTER_WHERE);
+    		if (queryPOS != null)
+    		{
+    			ret.append("AND " + queryPOS);
+    		}
+    		if (queryLetter)
+    			ret.append(QUERY_PART_TO_NAVI_LETTER_END);
+    		else
+    			ret.append(QUERY_PART_TO_NAVI_END);
+    	}
+    	
+    	return ret.toString();
+    }
+
+    // Private only, operated on a single instance
+	private EntryDBAdapter(Context context) {
     	super(context, DB_NAME, null, 1);
         this.myContext = context;
     }
-    
-    /**
-     * Creates a empty database on the system and rewrites it with your own database.
-     * */
-    public void createDataBase() throws IOException{
+
+	private static EntryDBAdapter instance;
+	// Return the singleton instance
+	public static EntryDBAdapter getInstance(Context c)
+	{
+		if (instance == null)
+			reloadDB(c);
+		return instance;
+	}
+
+	// Open the DB from the source file
+	public static void reloadDB(Context c)
+	{
+		if (instance != null)
+			instance.close();
+		// Always open on the application context, otherwise the first calling activity will be leaked
+		instance = new EntryDBAdapter(c.getApplicationContext());
+		try
+		{
+			// Store the DB version once the DB is loaded
+			instance.mDbVersion = instance.createDataBase();
+		}
+		catch (Exception ex)
+		{
+			// Store a dummy version - shouldn't ever happen
+			instance.mDbVersion = "Unk";
+		}
+	}
+	
+	public String getDBVersion()
+	{
+		return mDbVersion;
+	}
+	
+	// Copy the database from the distribution if it doesn't exist, return DB version
+	private String createDataBase() throws IOException{
+		// If a DB version is returned, it's fine
+    	String ret = checkDataBase();
  
-    	boolean dbExist = checkDataBase();
- 
-    	if(dbExist){
+    	if(ret != null){
     		//do nothing - database already exist
     	}else{
- 
     		//By calling this method and empty database will be created into the default system path
-            //of your application so we are gonna be able to overwrite that database with our database.
+               //of your application so we are gonna be able to overwrite that database with our database.
         	this.getReadableDatabase();
- 
         	try {
+        		// Copy the file over top of the database data
     			copyDataBase();
+    			// Check again for a valid version
+    			ret = checkDataBase();
+    			if (ret == null)
+    				ret = "Unk";
     		} catch (IOException e) {
         		throw new Error("Error copying database");
         	}
     	}
+    	
+    	return ret;
     }
-    
-    /**
-     * Check if the database already exist to avoid re-copying the file each time you open the application.
-     * @return true if it exists, false if it doesn't
-     */
-    private boolean checkDataBase(){
+	
+	// Check if the database exists, returning the version if it does
+    private String checkDataBase(){
+    	String ret = null;
     	SQLiteDatabase checkDB = null;
+
     	try{
     		String myPath = DB_PATH + DB_NAME;
+    		// Open a temporary database by path, don't allow it to create an empty database
     		checkDB = SQLiteDatabase.openDatabase(myPath, null, SQLiteDatabase.OPEN_READONLY);
     	}catch(SQLiteException e){
     		//database does't exist yet.
     	}
+
+    	// If the database was opened, check the version
     	if(checkDB != null){
-    		checkDB.close();
+    		try
+    		{
+    			ret = queryDatabaseVersion(checkDB);
+    		}
+    		catch(SQLiteException e){
+    			// An error means the version table doesn't exist, so it's not a valid DB
+        		checkDB.close();
+    			checkDB = null;
+    		}
     	}
-    	return checkDB != null ? true : false;
+ 
+    	return ret;
     }
- 
-    /**
-     * Copies your database from your local assets-folder to the just created empty database in the
-     * system folder, from where it can be accessed and handled.
-     * This is done by transfering bytestream.
-     * */
+    
+    private static String queryDatabaseVersion(SQLiteDatabase db) throws SQLiteException
+    {
+    	// Simple query of the database version
+    	String ret;
+    	Cursor c = db.rawQuery("SELECT version FROM version ORDER BY version DESC LIMIT 1", null);
+    	if (c.moveToFirst())
+    		ret = c.getString(0);
+    	else
+    		ret = "Unk";
+    	c.close();
+    	return ret;
+    }
+    
+    // Copy the database from the distribution
     private void copyDataBase() throws IOException{
- 
+    	 
     	//Open your local db as the input stream
     	InputStream myInput = myContext.getAssets().open(DB_NAME);
  
@@ -167,28 +261,113 @@ public class DBAdapter extends SQLiteOpenHelper {
     	myOutput.close();
     	myInput.close();
     }
- 
+
+    // Open the database
     public void openDataBase() throws SQLException{
+    	if (myDataBase != null)
+    	{
+    		mRefCount++;
+    		return;
+    	}
+    	mRefCount = 1;
     	//Open the database
         String myPath = DB_PATH + DB_NAME;
     	myDataBase = SQLiteDatabase.openDatabase(myPath, null, SQLiteDatabase.OPEN_READONLY);
     }
- 
+
+    // Change passed in text into an appropriate DB filter string
+    private String fixFilterString(String filter)
+    {
+    	return "%" + filter.toLowerCase().replace('ï¿½', 'b').replace('ï¿½', 'j') + "%";
+    }
+
+    // Perform full or filtered query, null filter returns full query
+    private Cursor queryAllOrFilter(boolean naviQuery, boolean letterQuery, String filter, String partOfSpeech)
+    {
+    	if (filter != null)
+    	{
+    		return myDataBase.rawQuery(createQuery(naviQuery, letterQuery, true, partOfSpeech), new String[] { LOCALE, fixFilterString(filter) });
+    	}
+    	return myDataBase.rawQuery(createQuery(naviQuery, letterQuery, false, partOfSpeech), new String[] { LOCALE });
+    }
+
+    // Query on all words, optionally applying a filter
+    public Cursor queryAllEntries(String filter, String partOfSpeech)
+    {
+    	return queryAllOrFilter(true, false, filter, partOfSpeech);
+    }
+
+    // Query on letters for words, optionally applying a filter
+    public Cursor queryAllEntryLetters(String filter, String partOfSpeech)
+    {
+    	return queryAllOrFilter(true, true, filter, partOfSpeech);
+    }
+    
+    // Query on all words for X > Na'vi dictionary, optionally applying a filter
+    public Cursor queryAllEntriesToNavi(String filter, String partOfSpeech)
+    {
+    	return queryAllOrFilter(false, false, filter, partOfSpeech);
+    }
+    
+    // Query on English letters for words, optionally applying a filter
+    public Cursor queryAllEntryToNaviLetters(String filter, String partOfSpeech)
+    {
+    	return queryAllOrFilter(false, true, filter, partOfSpeech);
+    }
+    
+    // Perform a simple query to offer results for suggest
+    public Cursor queryForSuggest(String filter, Boolean type)
+    {
+    	if (type == null) // Unspecified (Global search, or unified search)
+    		return myDataBase.rawQuery(QUERY_FOR_SUGGEST, new String[] { fixFilterString(filter), "%" + filter + "%", LOCALE });
+    	else if (type) // Native to Na'vi
+    		return myDataBase.rawQuery(QUERY_FOR_SUGGEST_NATIVE, new String[] { fixFilterString(filter), LOCALE });
+    	else // Na'vi to native
+    		return myDataBase.rawQuery(QUERY_FOR_SUGGEST_NAVI, new String[] { "%" + filter + "%", LOCALE });
+    }
+
+    // Return the fields for a single dictionary entry
+    public Cursor querySingleEntry(int rowId)
+    {
+    	return myDataBase.rawQuery(QUERY_ENTRY, new String[] { Integer.toString(rowId), LOCALE });
+    }
+    
+    // Perform a refcounted close operation
+    // ** This should, perhaps, be based on a subclass reference,
+    //    so GC cleanup can trigger closes
     @Override
 	public synchronized void close() {
-    	    if(myDataBase != null)
-    		    myDataBase.close();
-    	    super.close();
+    	mRefCount--;
+    	if (mRefCount > 0)
+    		return;
+
+    	if(myDataBase != null)
+    		myDataBase.close();
+
+    	instance = null;
+    	super.close();
+	}
+    
+    @Override
+	public void onCreate(SQLiteDatabase db) {
+    	// Empty database
 	}
  
-	@Override
-	public void onCreate(SQLiteDatabase db) {
-		
-	}
-	
 	@Override
 	public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
- 
+		// Probably should delete the dataabse and re-copy it
 	}
-	
+
+	// Return if the DB is open
+	public boolean isOpen()
+	{
+		return (instance != null);
+	}
+
+	// Perform a query that intentionally returns nothing,
+	// for suggest searches without an open DB
+	public Cursor queryNull()
+	{
+		return new MatrixCursor(new String[] { "_id" });
+	}
 }
